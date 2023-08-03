@@ -1,0 +1,56 @@
+#ifndef DEFINES_H
+#define DEFINES_H
+
+#define __debugSettings
+
+#define MQTT_CUSTOMER "viktak"
+#define MQTT_PROJECT "spiti"
+
+#define HARDWARE_ID "WiFi-LED-Matrix"
+#define HARDWARE_VERSION "1.0"
+#define SOFTWARE_ID "Word Clock v2"
+
+#define DEBUG_SPEED 921600
+
+#define JSON_SETTINGS_SIZE (JSON_OBJECT_SIZE(20) + 1000)
+#define JSON_MQTT_COMMAND_SIZE 300
+
+#define WIFI_CONNECTION_TIMEOUT 30
+#define NTP_REFRESH_INTERVAL 3600
+
+#define DEFAULT_AP_PASSWORD "esp12345678"
+
+#define DEFAULT_MQTT_SERVER "test.mosquitto.org"
+#define DEFAULT_MQTT_PORT 1883
+#define DEFAULT_MQTT_TOPIC "vNode"
+
+//  Digital IO
+#define CONNECTION_STATUS_LED_GPIO 0
+
+//  System
+#define DEFAULT_HEARTBEAT_INTERVAL 300
+#define GREETINGS_INTERVAL 10000
+#define GREETINGS_LENGTH 5000
+
+//  Neopixel
+#define NUMBER_OF_ROWS 11
+#define NUMBER_OF_COLUMNS 13
+#define TOTAL_LEDS NUMBER_OF_ROWS *NUMBER_OF_COLUMNS
+
+#define DARKENING_FACTOR .6
+
+//  Home Assistant semaphores
+#define HOMEASSISTANT_HOST "192.168.123.99"
+#define HOMEASSISTANT_PORT 8123
+#define HOMEASSISTANT_POLL_URL "/api/webhook/zuYDb3czXi4aX8V51G3gO8etULYIFyHM"
+#define HOMEASSISTANT_POLLING_PERIOD 60
+
+//  Semaphores
+#define SEM0 "SEMAPHORE0"
+#define SEM1 "SEMAPHORE1"
+#define SEM2 "SEMAPHORE2"
+#define SEM3 "SEMAPHORE3"
+#define SEM4 "SEMAPHORE4"
+#define SEM5 "SEMAPHORE5"
+
+#endif
