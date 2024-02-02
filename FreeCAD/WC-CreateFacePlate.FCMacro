@@ -1,0 +1,114 @@
+# -*- coding: utf-8 -*-
+import FreeCAD
+from FreeCAD import Base, Vector
+import Draft
+import Part
+
+#	Generic stuff
+doc = FreeCAD.ActiveDocument
+#sheet = doc.Spreadsheet
+
+#	Source file for letters
+fileName = "D:\Projects\Word Clock 2\FreeCAD\WC-Vic-Vik.txt"
+
+#	Get parameters from spreadsheet
+params = doc.findObjects(Type="Spreadsheet::Sheet", Label="^params$")[0]
+cols = params.getPropertyByName("cols")
+rows = params.getPropertyByName("rows")
+fontSize = params.getPropertyByName("font_size")
+cellLengthX = params.getPropertyByName("cell_length_X")
+cellLengthY = params.getPropertyByName("cell_length_Y")
+separatorHeight = params.getPropertyByName("separator_height")
+
+# cols = 3
+# rows = 3
+
+#################################################################
+###	Start
+#################################################################
+
+i = -1
+
+myList = []
+
+file = open(fileName, "r")
+while 1:
+	char = file.read(1)         
+	if not char:
+		break
+	if char != '\r' and char != '\n':
+		myList.append(char)
+file.close()	
+
+shape=[]
+
+for row in range(0,rows):
+	for col in range(0,cols):	
+		i+=1
+		ss=Draft.makeShapeString(String=myList[cols*row+col],FontFile="D:/Projects/Word Clock 2/FreeCAD/Fonts/Stencilia-A.ttf",Size=2,Tracking=0.0)
+		ss.setExpression('Size', u'<<params>>.font_size')
+		ss.Placement.Base = App.Vector(0, 0, 0)
+		ss.Placement.Rotation = App.Rotation(App.Vector(0, 0, 1), 0)
+		ss.Label = "ShapeString" + str(i)
+
+
+		if myList[cols*row+col] == "I":
+			ss.setExpression('.Placement.Base.x', u'<<params>>.cell_length_Y * ' + str(col)  + u'-2')
+			ss.setExpression('.Placement.Base.y', u'<<params>>.cell_length_X *'  + str(-row) + u' - 4.5 +' + u'(<<params>>.rows - 1) * <<params>>.cell_length_X')
+		elif myList[cols*row+col] == "F":
+			ss.setExpression('.Placement.Base.x', u'<<params>>.cell_length_Y * ' + str(col)  + u'-3')
+			ss.setExpression('.Placement.Base.y', u'<<params>>.cell_length_X *'  + str(-row) + u' - 4.5 +' + u'(<<params>>.rows - 1) * <<params>>.cell_length_X')
+		elif myList[cols*row+col] == "M":
+			ss.setExpression('.Placement.Base.x', u'<<params>>.cell_length_Y * ' + str(col)  + u'-5')
+			ss.setExpression('.Placement.Base.y', u'<<params>>.cell_length_X *'  + str(-row) + u' - 4.5 +' + u'(<<params>>.rows - 1) * <<params>>.cell_length_X')
+		elif myList[cols*row+col] == "W":
+			ss.setExpression('.Placement.Base.x', u'<<params>>.cell_length_Y * ' + str(col)  + u'-5')
+			ss.setExpression('.Placement.Base.y', u'<<params>>.cell_length_X *'  + str(-row) + u' - 4.5 +' + u'(<<params>>.rows - 1) * <<params>>.cell_length_X')
+		elif myList[cols*row+col] == ".":
+			ss.setExpression('.Placement.Base.x', u'<<params>>.cell_length_Y * ' + str(col)  + u'-1')
+			ss.setExpression('.Placement.Base.y', u'<<params>>.cell_length_X *'  + str(-row) + u' - 0.5 +' + u'(<<params>>.rows - 1) * <<params>>.cell_length_X')
+		elif myList[cols*row+col] == "+":
+			ss.setExpression('.Placement.Base.x', u'<<params>>.cell_length_Y * ' + str(col)  + u'-3.5')
+			ss.setExpression('.Placement.Base.y', u'<<params>>.cell_length_X *'  + str(-row) + u' - 4 +' + u'(<<params>>.rows - 1) * <<params>>.cell_length_X')
+		elif myList[cols*row+col] == "*":
+			ss.setExpression('.Placement.Base.x', u'<<params>>.cell_length_Y * ' + str(col)  + u'-2.5')
+			ss.setExpression('.Placement.Base.y', u'<<params>>.cell_length_X *'  + str(-row) + u'-6.5 +' + u'(<<params>>.rows - 1) * <<params>>.cell_length_X')
+
+		else:
+			ss.setExpression('.Placement.Base.x', u'<<params>>.cell_length_Y * ' + str(col)  + u'-4')
+			ss.setExpression('.Placement.Base.y', u'<<params>>.cell_length_X *'  + str(-row) + u' -4.5 +' + u'(<<params>>.rows - 1) * <<params>>.cell_length_X')
+		
+		ss.Support=None
+
+		#	Extrude it
+		dist = FreeCAD.Vector(0, 0, 0)
+		e = Draft.extrude(ss,dist)
+		e.Label = "ExtrudedLetter" + str(i)
+		e.DirMode = "Normal"
+		e.DirLink = None
+		e.setExpression('LengthFwd', u'<<params>>.faceplate_thickness ')
+		e.LengthRev = 0
+		e.Solid = True
+		
+		#	Queue up the shape
+		shape.append(e)
+
+#	Fuse all the shapes queued together
+letters = doc.addObject("Part::MultiFuse","UnionOfLetters").Shapes=shape
+
+#	Create box around the letters
+box = App.ActiveDocument.addObject("Part::Box","Box")
+box.Length = cellLengthX * cols
+box.Width = cellLengthY * rows
+box.Height = params.getPropertyByName("faceplate_thickness")
+box.Placement = FreeCAD.Placement(Vector(-cellLengthX / 2, -cellLengthY / 2, 0), FreeCAD.Rotation(0,0,0), Vector(0,0,0))
+
+#	Cut letters from the box
+letters = doc.findObjects(Type="Part::Feature", Label="^UnionOfLetters$")[0]
+myCut = App.ActiveDocument.addObject("Part::Cut","Faceplate")
+myCut.Base = box
+myCut.Tool = letters
+
+myCut.Placement.Base = App.Vector(cellLengthX / 2, cellLengthY / 2, separatorHeight)
+
+doc.recompute()
